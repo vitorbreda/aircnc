@@ -11,13 +11,24 @@ const app = express();
 const server = http.Server(app);
 const io = socketio(server);
 
-io.on('connection', socket => {
-   console.log('User connected', socket.id); 
-});
-
 mongoose.connect("mongodb+srv://vitor:vitor@cluster0-okxb6.mongodb.net/semana09?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
+});
+
+const connectedUsers = {};
+
+io.on('connection', socket => {
+   const { user_id } = socket.handshake.query;
+   
+   connectedUsers[user_id] = socket.id;
+});
+
+app.use((req, res, next) => {
+    req.io = io;
+    req.connectedUsers = connectedUsers;
+
+    return next();
 });
 
 app.use(cors());
